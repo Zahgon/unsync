@@ -9,27 +9,19 @@ from typing import Generic, TypeVar
 class unsync_meta(type):
 
     def _init_loop(cls):
-        cls._loop = asyncio.new_event_loop()
-        cls._thread = Thread(target=cls._thread_target, args=(cls._loop,), daemon=True)
-        cls._thread.start()
+        pass
 
     @property
     def loop(cls):
-        if getattr(cls, '_loop', None) is None:
-            unsync_meta._init_loop(cls)
-        return cls._loop
+        pass
 
     @property
     def thread(cls):
-        if getattr(cls, '_thread', None) is None:
-            unsync_meta._init_loop(cls)
-        return cls._thread
+        pass
 
     @property
     def process_executor(cls):
-        if getattr(cls, '_process_executor', None) is None:
-            cls._process_executor = concurrent.futures.ProcessPoolExecutor()
-        return cls._process_executor
+        pass
 
 
 class unsync(object, metaclass=unsync_meta):
@@ -39,8 +31,7 @@ class unsync(object, metaclass=unsync_meta):
 
     @staticmethod
     def _thread_target(loop):
-        asyncio.set_event_loop(loop)
-        loop.run_forever()
+        pass
 
     def __init__(self, *args, **kwargs):
         self.args = []
@@ -54,15 +45,10 @@ class unsync(object, metaclass=unsync_meta):
 
     @property
     def cpu_bound(self):
-        return 'cpu_bound' in self.kwargs and self.kwargs['cpu_bound']
+        pass
 
     def _set_func(self, func):
-        assert _isfunction(func)
-        self.func = func
-        functools.update_wrapper(self, func)
-        # On Windows/Mac MP turns the main module into __mp_main__ in multiprocess targets
-        module = "__main__" if func.__module__ == "__mp_main__" else func.__module__
-        unsync.unsync_functions[(module, func.__name__)] = func
+        pass
 
     def __call__(self, *args, **kwargs):
         if self.func is None:
@@ -82,19 +68,18 @@ class unsync(object, metaclass=unsync_meta):
 
     def __get__(self, instance, owner):
         def _call(*args, **kwargs):
-            return self(instance, *args, **kwargs)
+            pass
 
         functools.update_wrapper(_call, self.func)
         return _call
 
 
 def _isfunction(obj):
-    return callable(obj)
+    pass
 
 
 def _multiprocess_target(func_name, *args, **kwargs):
-    __import__(func_name[0])
-    return unsync.unsync_functions[func_name](*args, **kwargs)
+    pass
 
 
 T = TypeVar('T')
@@ -103,18 +88,11 @@ T = TypeVar('T')
 class Unfuture(Generic[T]):
     @staticmethod
     def from_value(value):
-        future = Unfuture()
-        future.set_result(value)
-        return future
+        pass
 
     def __init__(self, future=None):
         def callback(source, target):
-            try:
-                asyncio.futures._chain_future(source, target)
-            except Exception as exc:
-                if self.concurrent_future.set_running_or_notify_cancel():
-                    self.concurrent_future.set_exception(exc)
-                raise
+            pass
 
         if asyncio.iscoroutine(future):
             future = asyncio.ensure_future(future, loop=unsync.loop)
@@ -134,24 +112,14 @@ class Unfuture(Generic[T]):
 
     def result(self, *args, **kwargs) -> T:
         # The asyncio Future may have completed before the concurrent one
-        if self.future.done():
-            return self.future.result()
-        # Don't allow waiting in the unsync.thread loop since it will deadlock
-        if threading.current_thread() == unsync.thread and not self.concurrent_future.done():
-            raise asyncio.InvalidStateError("Calling result() in an unsync method is not allowed")
-        # Wait on the concurrent Future outside unsync.thread
-        return self.concurrent_future.result(*args, **kwargs)
+        pass
 
     def done(self):
-        return self.future.done() or self.concurrent_future.done()
+        pass
 
     def set_result(self, value):
-        return self.future._loop.call_soon_threadsafe(lambda: self.future.set_result(value))
+        pass
 
     @unsync
     async def then(self, continuation):
-        await self
-        result = continuation(self.result())
-        if hasattr(result, '__await__'):
-            return await result
-        return result
+        pass
